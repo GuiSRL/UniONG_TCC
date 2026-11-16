@@ -10,6 +10,13 @@ ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
 RUN npm run build
 
 FROM nginx:1.27-alpine
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# A imagem oficial aplica /etc/nginx/templates/*.template (envsubst) ao iniciar.
+# PORT: o Railway define; BACKEND_URL: endereço do Django (padrão do docker-compose).
+ENV PORT=80
+ENV BACKEND_URL=http://backend:8000
+COPY nginx/default.conf.template /etc/nginx/templates/default.conf.template
+COPY iniciar-nginx.sh /iniciar-nginx.sh
 COPY --from=build /app/dist /usr/share/nginx/html
+RUN chmod +x /iniciar-nginx.sh
 EXPOSE 80
+CMD ["/iniciar-nginx.sh"]

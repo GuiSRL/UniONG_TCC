@@ -277,5 +277,15 @@ Decisões tomadas:
 Branch `fase-8-visao-membro` (a partir de `fase-7-artigo`), a pedido do autor, para a demonstração na banca.
 - [x] Controle “Administrador | Membro” no topo do painel. “Membro” abre o portal público (`/transparencia`), que é o que um membro vê. No portal, quem está logado vê o botão “Voltar à visão de administrador”.
 - [x] Configurações → Instituição: bloco “Portal de transparência” com o endereço público (`<origem>/transparencia`) e os botões “Abrir portal” e “Copiar link”.
+- [x] Painel: os cartões “Saldo do Mês”, “Voluntários Ativos” e “Horas de Voluntariado no Mês” abrem a lista detalhada, como os demais. Endpoints novos: `/api/dashboard/kpi-saldo-mes/` (doações confirmadas e despesas pagas do mês, com sinal), `kpi-voluntarios-ativos/` e `kpi-horas-voluntariado-mes/`, com testes.
 
 Decisão: é só um atalho de navegação, sem papel simulado nem mudança de permissões. Por isso não reverte a decisão do CLAUDE.md que removeu o seletor simulado de perfil: membros continuam sem login, e o papel exibido continua vindo do backend.
+
+## Extra — Publicação no Railway ✅
+Branch `fase-9-railway` (a partir de `fase-8-visao-membro`). O sistema publicado em `uniong.up.railway.app` abria a tela, mas `/api/` não respondia: o frontend não era servido pelo nginx do projeto, e o nginx encaminhava para `backend:8000`, nome que só existe no docker-compose.
+- [x] `ong_frontend/nginx/default.conf.template`: porta (`PORT`) e backend (`BACKEND_URL`) por variável; endereço resolvido a cada requisição, com o DNS do container lido em `iniciar-nginx.sh`.
+- [x] Backend: `docker/iniciar-backend.sh` escuta em `[::]` quando há IPv6 (a rede interna do Railway exige) e na porta `PORT` (padrão 8000); `MEDIA_ROOT` configurável, para usar volume.
+- [x] Frontend: limite de 30 s nas chamadas (2 min nos envios de arquivo); o login informa "O servidor não respondeu" em vez de carregar para sempre, e avisa quando há tentativas demais.
+- [x] `docs/implantacao.md`, seção 10: passo a passo do Railway.
+
+Não verificado: os arquivos Docker não foram executados nesta máquina (sem Docker). A sintaxe dos scripts e a leitura do DNS foram testadas fora do container. O docker-compose continua funcionando com os padrões (`PORT=80`, `BACKEND_URL=http://backend:8000`).

@@ -1,8 +1,14 @@
 import axios from 'axios'
 
+// Sem limite, uma API que não responde deixa a tela carregando para sempre.
+export const TEMPO_LIMITE_MS = 30000
+export const TEMPO_LIMITE_ENVIO_MS = 120000
+axios.defaults.timeout = TEMPO_LIMITE_MS  // vale também para as chamadas públicas feitas com axios direto
+
 const api = axios.create({
   baseURL: '/api',
   headers: { 'Content-Type': 'application/json' },
+  timeout: TEMPO_LIMITE_MS,
 })
 
 api.interceptors.request.use((config) => {
@@ -66,6 +72,9 @@ export const getKpiDoacoes          = () => api.get('/dashboard/kpi-doacoes/')
 export const getKpiDoacoesMes       = () => api.get('/dashboard/kpi-doacoes-mes/')
 export const getKpiApoiadoresAtivos = () => api.get('/dashboard/kpi-apoiadores-ativos/')
 export const getKpiCampanhasAtivas  = () => api.get('/dashboard/kpi-campanhas-ativas/')
+export const getKpiSaldoMes         = () => api.get('/dashboard/kpi-saldo-mes/')
+export const getKpiVoluntariosAtivos = () => api.get('/dashboard/kpi-voluntarios-ativos/')
+export const getKpiHorasVoluntariadoMes = () => api.get('/dashboard/kpi-horas-voluntariado-mes/')
 export const getDoacoesPorMes       = (mes) => api.get(`/dashboard/doacoes-por-mes/?mes=${mes}`)
 
 // Apoiadores
@@ -87,7 +96,7 @@ export const excluirCampanha       = (id) => api.delete(`/campanhas/${id}/`)
 export const enviarImagemCampanha  = (id, arquivo) => {
   const fd = new FormData()
   fd.append('imagem', arquivo)
-  return api.post(`/campanhas/${id}/imagem/`, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+  return api.post(`/campanhas/${id}/imagem/`, fd, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: TEMPO_LIMITE_ENVIO_MS })
 }
 export const encerrarCampanha      = (id) => api.patch(`/campanhas/${id}/`, { status: 'encerrada' })
 
@@ -101,7 +110,7 @@ export const excluirDoacao         = (id) => api.delete(`/doacoes/${id}/`)
 export const enviarComprovanteDoacao = (id, arquivo) => {
   const fd = new FormData()
   fd.append('comprovante', arquivo)
-  return api.post(`/doacoes/${id}/comprovante/`, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+  return api.post(`/doacoes/${id}/comprovante/`, fd, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: TEMPO_LIMITE_ENVIO_MS })
 }
 export const baixarComprovanteDoacao = (id) => api.get(`/doacoes/${id}/comprovante/`, { responseType: 'blob' })
 export const removerComprovanteDoacao = (id) => api.delete(`/doacoes/${id}/comprovante/`)
@@ -116,8 +125,8 @@ export const excluirContribuicao   = (id) => api.delete(`/contribuicoes/${id}/`)
 
 // Despesas
 export const getDespesas             = (params) => api.get('/despesas/', { params })
-export const criarDespesa            = (fd) => api.post('/despesas/', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
-export const atualizarDespesa        = (id, fd) => api.put(`/despesas/${id}/`, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+export const criarDespesa            = (fd) => api.post('/despesas/', fd, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: TEMPO_LIMITE_ENVIO_MS })
+export const atualizarDespesa        = (id, fd) => api.put(`/despesas/${id}/`, fd, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: TEMPO_LIMITE_ENVIO_MS })
 export const excluirDespesa          = (id) => api.delete(`/despesas/${id}/`)
 export const removerAnexoDespesa     = (despesaId, anexoId) => api.delete(`/despesas/${despesaId}/anexos/${anexoId}/`)
 export const marcarAnexoPublico      = (despesaId, anexoId, publico) => api.patch(`/despesas/${despesaId}/anexos/${anexoId}/`, { publico })

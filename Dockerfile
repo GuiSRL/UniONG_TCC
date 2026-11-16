@@ -19,11 +19,12 @@ COPY ong_backend ong_backend
 COPY core core
 COPY docker/entrypoint-backend.sh /entrypoint.sh
 COPY docker/healthcheck.py /healthcheck.py
+COPY docker/iniciar-backend.sh /iniciar-backend.sh
 
 RUN useradd --create-home --uid 1000 app \
     && mkdir -p /app/staticfiles /app/media /app/privado /app/backups \
     && chown -R app:app /app \
-    && chmod +x /entrypoint.sh
+    && chmod +x /entrypoint.sh /iniciar-backend.sh
 USER app
 
 EXPOSE 8000
@@ -31,4 +32,4 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
     CMD ["python", "/healthcheck.py"]
 
 ENTRYPOINT ["/entrypoint.sh"]
-CMD ["gunicorn", "ong_backend.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3", "--timeout", "60", "--access-logfile", "-"]
+CMD ["/iniciar-backend.sh"]

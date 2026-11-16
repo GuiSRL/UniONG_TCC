@@ -48,6 +48,10 @@ export default function Login() {
     } catch (err) {
       if (err.response?.status === 401) {
         setErro('Usuário ou senha incorretos.')
+      } else if (err.response?.status === 429) {
+        setErro('Muitas tentativas. Aguarde um minuto e tente de novo.')
+      } else if (err.code === 'ECONNABORTED' || !err.response) {
+        setErro('O servidor não respondeu. Verifique a conexão ou tente de novo em instantes.')
       } else {
         setErro('Não foi possível conectar ao servidor. Tente novamente.')
       }

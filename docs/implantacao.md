@@ -192,3 +192,64 @@ Teste a restauração de vez em quando em outra máquina: backup que nunca foi r
 `GET /api/health/` responde `200 {"status": "ok"}` sem login e sem dados. Se o banco não responde, devolve `503`. Pode ser usado por serviços gratuitos de monitoramento (UptimeRobot, Better Stack) e já é usado pelo healthcheck do container `backend`.
 
 Logs: `docker compose logs -f backend` (requisições do gunicorn e erros) e `docker compose logs -f web` (nginx).
+
+## 10. Railway
+
+No Railway, cada parte é um **serviço separado**: o `docker-compose.yml` não é usado. São três serviços no mesmo projeto, e o nginx do frontend encaminha `/api/`, `/c/` e `/admin-django/` ao backend pela rede interna.
+
+| Serviço | Origem | Domínio público |
+|---|---|---|
+| MySQL | modelo **MySQL** do Railway | não |
+| backend | este repositório, Root Directory `/` (usa o `Dockerfile` da raiz) | não é necessário |
+| frontend | este repositório, Root Directory `ong_frontend` (usa `ong_frontend/Dockerfile`, com nginx) | **sim**: é o endereço do sistema |
+
+**Backend: variáveis**
+
+| Variável | Valor |
+|---|---|
+| `PORT` | `8000` (fixa a porta usada pelo frontend) |
+| `DB_HOST` | `${{MySQL.MYSQLHOST}}` |
+| `DB_PORT` | `${{MySQL.MYSQLPORT}}` |
+| `DB_NAME` | `${{MySQL.MYSQLDATABASE}}` |
+| `DB_USER` | `${{MySQL.MYSQLUSER}}` |
+| `DB_PASSWORD` | `${{MySQL.MYSQLPASSWORD}}` |
+| `DEBUG` | `False` |
+| `SECRET_KEY` | chave longa e aleatória |
+| `ALLOWED_HOSTS` | domínio do frontend, ex.: `uniong.up.railway.app` |
+| `CORS_ALLOWED_ORIGINS`, `CSRF_TRUSTED_ORIGINS`, `FRONTEND_URL` | `https://uniong.up.railway.app` |
+| `USAR_PROXY_HTTPS` | `True` (o Railway termina o HTTPS) |
+| `NUM_PROXIES` | `2` (borda do Railway + nginx do frontend) |
+| `MEDIA_ROOT`, `PRIVATE_MEDIA_ROOT` | `/app/dados/media` e `/app/dados/privado`, se houver volume (abaixo) |
+
+Os nomes `MySQL.` acima devem ser iguais ao nome do serviço do banco no projeto.
+
+**Frontend: variáveis**
+
+| Variável | Valor |
+|---|---|
+| `BACKEND_URL` | `http://<nome-do-servico-backend>.railway.internal:8000`. O endereço aparece em backend → Settings → Networking → Private Networking. Sem barra no fim |
+| `VITE_GOOGLE_CLIENT_ID` | opcional; o mesmo `GOOGLE_CLIENT_ID` do backend |
+
+O Railway define a variável `PORT` do frontend sozinho; o nginx escuta nela.
+
+**Arquivos enviados (volume).** Sem volume, logo, imagens e anexos se perdem a cada deploy. No serviço backend:
+1. Adicione um volume montado em `/app/dados`.
+2. Defina `MEDIA_ROOT` e `PRIVATE_MEDIA_ROOT` como na tabela do backend.
+3. Defina `RAILWAY_RUN_UID=0`: os volumes do Railway pertencem ao root, e o container roda com um usuário sem privilégios.
+
+**Primeiro superusuário.** As migrações rodam sozinhas a cada subida do backend. Para criar o usuário, use a CLI:
+
+```bash
+railway link        # escolha o projeto e o serviço backend
+railway ssh
+python manage.py createsuperuser
+```
+
+Ou use as variáveis `DJANGO_SUPERUSER_USERNAME`, `DJANGO_SUPERUSER_EMAIL` e `DJANGO_SUPERUSER_PASSWORD`, com o Pre-Deploy Command `python manage.py createsuperuser --noinput || true`. Remova os dois depois de entrar.
+
+**Conferir.**
+- `https://<domínio>/api/health/` deve responder `{"status": "ok"}`.
+- Os logs do frontend mostram `nginx: porta …, backend …`.
+- Os logs do backend mostram `gunicorn: escutando em [::]:8000`.
+
+Limitação: o admin do Django (`/admin-django/`) funciona, mas sem estilo, porque o `/static/` não é compartilhado entre os serviços. O sistema em si não usa `/static/`.
