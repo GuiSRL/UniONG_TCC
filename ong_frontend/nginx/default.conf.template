@@ -17,6 +17,8 @@ server {
     client_max_body_size 25m;
     server_tokens off;
 
+    # Cabeçalhos de segurança: o nginx não herda add_header do server num location que define o seu,
+    # por isso eles se repetem em /assets/ e em /.
     add_header X-Content-Type-Options nosniff always;
     add_header Referrer-Policy strict-origin-when-cross-origin always;
     add_header X-Frame-Options DENY always;
@@ -57,6 +59,9 @@ server {
     location /assets/ {
         expires 1y;
         add_header Cache-Control "public, immutable";
+        add_header X-Content-Type-Options nosniff always;
+        add_header Referrer-Policy strict-origin-when-cross-origin always;
+        add_header X-Frame-Options DENY always;
         access_log off;
     }
 
@@ -64,5 +69,8 @@ server {
     location / {
         try_files $uri /index.html;
         add_header Cache-Control "no-cache";
+        add_header X-Content-Type-Options nosniff always;
+        add_header Referrer-Policy strict-origin-when-cross-origin always;
+        add_header X-Frame-Options DENY always;
     }
 }
