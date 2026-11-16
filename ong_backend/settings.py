@@ -156,7 +156,8 @@ STATIC_URL = 'static/'
 STATIC_ROOT = config('STATIC_ROOT', default=str(BASE_DIR / 'staticfiles'))
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+# Imagens públicas (logo, campanhas). Configurável para apontar para um volume persistente.
+MEDIA_ROOT = config('MEDIA_ROOT', default=str(BASE_DIR / 'media'))
 
 # Backups (python manage.py backup): pasta e quantos arquivos manter.
 BACKUP_DIR = config('BACKUP_DIR', default=str(BASE_DIR / 'backups'))

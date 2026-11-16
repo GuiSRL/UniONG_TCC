@@ -9,7 +9,7 @@ import urllib.request
 
 host = os.environ.get('ALLOWED_HOSTS', 'localhost').split(',')[0].strip().lstrip('.') or 'localhost'
 requisicao = urllib.request.Request(
-    'http://127.0.0.1:8000/api/health/',
+    f"http://127.0.0.1:{os.environ.get('PORT', '8000')}/api/health/",
     headers={'Host': host, 'X-Forwarded-Proto': 'https'},
 )
 try:

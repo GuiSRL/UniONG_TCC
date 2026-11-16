@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Save, ExternalLink, Copy, Check } from 'lucide-react'
-import api from '../services/api'
+import api, { TEMPO_LIMITE_ENVIO_MS } from '../services/api'
 import { instituicaoAlterada } from '../hooks/useInstituicao'
 import { mensagemErro } from '../utils/formatos'
 
@@ -105,7 +105,7 @@ export default function FormInstituicao({ avisar }) {
     const fd = new FormData()
     fd.append('logo', arquivo)
     try {
-      const { data } = await api.post('/configuracoes/instituicao/logo/', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+      const { data } = await api.post('/configuracoes/instituicao/logo/', fd, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: TEMPO_LIMITE_ENVIO_MS })
       setLogoUrl(data.logo_url)
       instituicaoAlterada()
       avisar('ok', 'Logo atualizado.')

@@ -1,11 +1,17 @@
-# nginx do container "web": serve o React e encaminha API, prévias e admin do Django ao backend.
-upstream backend {
-    server backend:8000;
-}
+# nginx do frontend: serve o React e encaminha API, prévias e admin do Django ao backend.
+# Modelo processado pela imagem oficial do nginx na subida (envsubst):
+#   ${PORT}         porta em que o nginx escuta (Railway define; padrão 80)
+#   ${BACKEND_URL}  endereço do Django, sem barra final (docker-compose: http://backend:8000;
+#                   Railway: http://<servico>.railway.internal:8000)
+# O endereço é resolvido a cada requisição (resolver + variável), para o nginx subir mesmo que a
+# rede interna ainda não esteja pronta e acompanhar mudanças de IP do backend.
 
 server {
-    listen 80;
+    listen ${PORT};
     server_name _;
+
+    resolver ${NGINX_LOCAL_RESOLVERS} valid=10s ipv6=on;
+    set $backend ${BACKEND_URL};
 
     # Anexos e imagens têm até 5 MB cada; despesas aceitam vários anexos por envio.
     client_max_body_size 25m;
@@ -18,7 +24,7 @@ server {
     root /usr/share/nginx/html;
 
     location /api/ {
-        proxy_pass http://backend;
+        proxy_pass $backend;
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
@@ -26,20 +32,21 @@ server {
     }
 
     location /c/ {
-        proxy_pass http://backend;
+        proxy_pass $backend;
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
     }
 
     location /admin-django/ {
-        proxy_pass http://backend;
+        proxy_pass $backend;
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
     }
 
-    # Arquivos do collectstatic (admin do Django e DRF), compartilhados por volume.
+    # Arquivos do collectstatic (admin do Django e DRF), compartilhados por volume no docker-compose.
+    # Sem o volume (ex.: Railway), só o admin do Django fica sem estilo; o sistema não usa /static/.
     location /static/ {
         alias /var/www/static/;
         expires 7d;
