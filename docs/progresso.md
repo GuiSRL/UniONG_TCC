@@ -289,3 +289,4 @@ Branch `fase-9-railway` (a partir de `fase-8-visao-membro`). O sistema publicado
 - [x] `docs/implantacao.md`, seção 10: passo a passo do Railway.
 
 Não verificado: os arquivos Docker não foram executados nesta máquina (sem Docker). A sintaxe dos scripts e a leitura do DNS foram testadas fora do container. O docker-compose continua funcionando com os padrões (`PORT=80`, `BACKEND_URL=http://backend:8000`).
+- [x] Correção seguinte (branch `fase-9b-railway-banco`): no Railway, o nginx já alcançava o backend, mas `/api/` esperava 120 s e dava 504. Conexão ao MySQL passa a ter limite (`DB_CONNECT_TIMEOUT`, 10 s), para o `/api/health/` responder "banco indisponível" em vez de travar. Os cabeçalhos de segurança do nginx não eram enviados em `/` e `/assets/`, porque o nginx não herda `add_header` num `location` que define o seu; agora se repetem nesses blocos.

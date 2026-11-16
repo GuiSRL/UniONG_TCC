@@ -78,6 +78,8 @@ DATABASES = {
         'ATOMIC_REQUESTS': True,
         'OPTIONS': {
             'charset': 'utf8mb4',
+            # Sem limite, um banco inacessível trava as requisições em vez de devolver erro.
+            'connect_timeout': config('DB_CONNECT_TIMEOUT', default=10, cast=int),
         },
     }
 }
