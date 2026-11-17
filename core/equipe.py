@@ -18,6 +18,8 @@ from .auditoria import registrar
 from .normalizacao import normalizar_email
 from .throttles import AuthThrottle
 
+import resend
+
 Usuario = get_user_model()
 
 
@@ -59,17 +61,19 @@ def usuario_do_link(uidb64, token, gerador):
 def enviar_convite(usuario, convidado_por):
     link = link_com_token('definir-senha', usuario, convite_token)
     quem = convidado_por.get_full_name() or convidado_por.username
-    send_mail(
-        subject='Convite para o painel da organização',
-        message=(
-            f'Olá, {usuario.first_name or usuario.email}!\n\n'
-            f'{quem} convidou você para acessar o painel administrativo.\n'
-            f'Defina sua senha neste link (válido por 72 horas):\n{link}\n\n'
-            'Se você não esperava este convite, ignore esta mensagem.'
+    
+    resend.api_key = settings.EMAIL_HOST_PASSWORD
+    resend.Emails.send({
+        "from": settings.DEFAULT_FROM_EMAIL,
+        "to": [usuario.email],
+        "subject": "Convite para o painel da organização",
+        "html": (
+            f"<p>Olá, {usuario.first_name or usuario.email}!</p>"
+            f"<p><b>{quem}</b> convidou você para acessar o painel administrativo.</p>"
+            f"<p>Defina sua senha neste link (válido por 72 horas):<br><a href='{link}'>{link}</a></p>"
+            f"<p>Se você não esperava este convite, ignore esta mensagem.</p>"
         ),
-        from_email=None,
-        recipient_list=[usuario.email],
-    )
+    })
 
 
 class SomenteSuperusuario(BasePermission):
@@ -203,17 +207,19 @@ def recuperar_senha(request):
         for usuario in Usuario.objects.filter(email__iexact=email, is_active=True, is_staff=True):
             link = link_com_token('redefinir-senha', usuario, default_token_generator)
             horas = settings.PASSWORD_RESET_TIMEOUT // 3600
-            send_mail(
-                subject='Redefinição de senha do painel',
-                message=(
-                    f'Olá, {usuario.first_name or usuario.username}!\n\n'
-                    'Recebemos um pedido para redefinir a sua senha do painel administrativo.\n'
-                    f'Use este link (válido por {horas} hora{"s" if horas != 1 else ""}):\n{link}\n\n'
-                    'Se não foi você, ignore esta mensagem: a senha atual continua valendo.'
+            
+            resend.api_key = settings.EMAIL_HOST_PASSWORD
+            resend.Emails.send({
+                "from": settings.DEFAULT_FROM_EMAIL,
+                "to": [usuario.email],
+                "subject": "Redefinição de senha do painel",
+                "html": (
+                    f"<p>Olá, {usuario.first_name or usuario.username}!</p>"
+                    f"<p>Recebemos um pedido para redefinir a sua senha do painel administrativo.</p>"
+                    f"<p>Use este link (válido por {horas} hora{'s' if horas != 1 else ''}):<br><a href='{link}'>{link}</a></p>"
+                    f"<p>Se não foi você, ignore esta mensagem: a senha atual continua valendo.</p>"
                 ),
-                from_email=None,
-                recipient_list=[usuario.email],
-            )
+            })
     return Response({'mensagem': MENSAGEM_RECUPERACAO})
 
 
